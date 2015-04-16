@@ -2,7 +2,7 @@ Package: soGGi
 Type: Package
 Title: Visualise ChIP-seq, MNase-seq and motif occurrence as aggregate
         plots Summarised Over Grouped Genomic Intervals
-Version: 0.99.3
+Version: 1.0.0
 Date: 2014-06-01
 Author: Gopuraja Dharmalingam, Tom Carroll
 Maintainer: Tom Carroll <tc.infomatics@gmail.com>
