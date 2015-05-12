@@ -50,7 +50,7 @@
 #' data(chipExampleBig)
 #' chipExampleBig
 #' @export
-setClass("ChIPprofile",contains = "SummarizedExperiment",
+setClass("ChIPprofile",contains = "RangedSummarizedExperiment",
          slots=c(params="list"
          ))
 
@@ -90,7 +90,7 @@ normaliseQuantiles.ChIPprofile <-  function (object)
               colnames(qnormAssays[[c]]) <- colnames(assays(object)[[c]])
             }     
             normProfile <- SummarizedExperiment(qnormAssays,rowRanges=rowRanges(object))
-            exptData(normProfile) <- exptData(object)
+            metadata(normProfile) <- metadata(object)
             return(new("ChIPprofile",normProfile,params=object@params))
           }  
 
@@ -115,8 +115,8 @@ setMethod("c", "ChIPprofile",
           {
             assayList <- lapply(list(x,...),function(x)assays(x)[[1]])
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(x))
-            exptData(subsetProfile)$names <- unlist(lapply(list(x,...),function(x)exptData(x)$name))
-            exptData(subsetProfile)$AlignedReadsInBam <- unlist(lapply(list(x,...),function(x)exptData(x)$AlignedReadsInBam))
+            metadata(subsetProfile)$names <- unlist(lapply(list(x,...),function(x)metadata(x)$name))
+            metadata(subsetProfile)$AlignedReadsInBam <- unlist(lapply(list(x,...),function(x)metadata(x)$AlignedReadsInBam))
             return(new("ChIPprofile",subsetProfile,params=x@params))
             
           }
@@ -138,8 +138,8 @@ setMethod("rbind", "ChIPprofile",
             }
             newrowRanges <- unlist(GRangesList(lapply(regions,function(x)rowRanges(x))))
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=newrowRanges)
-            exptData(subsetProfile)$names <- exptData(x)$names
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(x)$AlignedReadsInBam
+            metadata(subsetProfile)$names <- metadata(x)$names
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam
             return(new("ChIPprofile",subsetProfile,params=x@params))            
           }
 )
@@ -159,8 +159,8 @@ setMethod("cbind", "ChIPprofile",
               assayList[[a]] <- do.call(cbind,listTemp)
             }
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(x))
-            exptData(subsetProfile)$names <- exptData(x)$names
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(x)$AlignedReadsInBam
+            metadata(subsetProfile)$names <- metadata(x)$names
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam
             return(new("ChIPprofile",subsetProfile,params=x@params))            
           }
 )
@@ -172,8 +172,8 @@ setMethod("[[", c("ChIPprofile", "ANY", "missing"),
           function(x, i, j, ...)
           {
             subsetProfile <- SummarizedExperiment(assays(x)[[i, ...]],rowRanges=rowRanges(x))
-            exptData(subsetProfile)$names <- exptData(x)$names[i]
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(x)$AlignedReadsInBam[i]
+            metadata(subsetProfile)$names <- metadata(x)$names[i]
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam[i]
             return(new("ChIPprofile",subsetProfile,params=x@params))                        
           })
 
@@ -183,7 +183,7 @@ setMethod("[[", c("ChIPprofile", "ANY", "missing"),
 setMethod("$", "ChIPprofile",
           function(x, name)
           {
-            x[[which(exptData(x)$names %in% name)]]
+            x[[which(metadata(x)$names %in% name)]]
           })
 
 # setMethod("Ops", signature(e1="ChIPprofile", e2="ChIPprofile"),
@@ -213,8 +213,8 @@ setMethod("Ops", signature(e1="ChIPprofile", e2="ChIPprofile"),
               assayList[[i]] <- callGeneric(assays(e1)[[i]],assays(e2)[[i]]) 
             }
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(e1))
-            exptData(subsetProfile)$names <- paste0(exptData(e1)$names,".",exptData(e2)$names)
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(e1)$AlignedReadsInBam[i]
+            metadata(subsetProfile)$names <- paste0(metadata(e1)$names,".",metadata(e2)$names)
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(e1)$AlignedReadsInBam[i]
             return(new("ChIPprofile",subsetProfile,params=e1@params))                                    
           }
 )
@@ -228,8 +228,8 @@ setMethod("Ops", signature(e1="ChIPprofile", e2="numeric"),
               assayList[[i]] <- callGeneric(assays(e1)[[i]],e2) 
             }
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(e1))
-            exptData(subsetProfile)$names <- exptData(e1)$names
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(e1)$AlignedReadsInBam
+            metadata(subsetProfile)$names <- metadata(e1)$names
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(e1)$AlignedReadsInBam
             return(new("ChIPprofile",subsetProfile,params=e1@params))                                    
           }
 )
@@ -243,8 +243,8 @@ setMethod("Ops", signature(e1="numeric", e2="ChIPprofile"),
               assayList[[i]] <- callGeneric(e1,assays(e2)[[i]]) 
             }
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(e1))
-            exptData(subsetProfile)$names <- exptData(e2)$names
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(e2)$AlignedReadsInBam
+            metadata(subsetProfile)$names <- metadata(e2)$names
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(e2)$AlignedReadsInBam
             return(new("ChIPprofile",subsetProfile,params=e2@params))                                    
           }
 )
@@ -256,8 +256,8 @@ setMethod("mean", "ChIPprofile",
             if(missing(...)){
               assayList <- Reduce("+",assays(x))/length(assays(x))
               subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(x))
-              exptData(subsetProfile)$names <- paste0("MeanOf_",exptData(x)$name,collapse="&")
-              exptData(subsetProfile)$AlignedReadsInBam <- exptData(x)$AlignedReadsInBam
+              metadata(subsetProfile)$names <- paste0("MeanOf_",metadata(x)$name,collapse="&")
+              metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam
               return(new("ChIPprofile",subsetProfile,params=x@params))                                                  
             }else{
               x <- list(x,...)
@@ -268,14 +268,14 @@ setMethod("mean", "ChIPprofile",
                 nameVec <- vector("character")
                 for(r in 1:length(x)){
                   listTemp[[r]] <- assays(x[[r]])[[a]]
-                  nameVec <- c(nameVec,exptData(x[[r]])$names[[a]])
+                  nameVec <- c(nameVec,metadata(x[[r]])$names[[a]])
                 }
                 assayList[[a]] <- Reduce("+",listTemp)/length(x)
                 nameList[[a]] <- paste0(nameVec,collapse="&")
               }
                 subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(x[[1]]))
-                exptData(subsetProfile)$names <- paste0("MeanOf_",unlist(nameList))
-                exptData(subsetProfile)$AlignedReadsInBam <- unlist(lapply(x,function(x)exptData(x)$AlignedReadsInBam))
+                metadata(subsetProfile)$names <- paste0("MeanOf_",unlist(nameList))
+                metadata(subsetProfile)$AlignedReadsInBam <- unlist(lapply(x,function(x)metadata(x)$AlignedReadsInBam))
                 return(new("ChIPprofile",subsetProfile,params=x[[1]]@params))                                                  
                 
               }
@@ -290,8 +290,8 @@ setMethod("log2", "ChIPprofile",
             x <- zeroToMin2(x)
             assayList <- lapply(assays(x),log2)
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(x))
-            exptData(subsetProfile)$names <- exptData(x)$names
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(x)$AlignedReadsInBam
+            metadata(subsetProfile)$names <- metadata(x)$names
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam
             return(new("ChIPprofile",subsetProfile,params=x[[1]]@params))                                                  
             
           }
@@ -304,8 +304,8 @@ setMethod("log", "ChIPprofile",
             x <- zeroToMin2(x)
             assayList <- lapply(assays(x),function(x)log(x,base))
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(x))
-            exptData(subsetProfile)$names <- exptData(x)$names
-            exptData(subsetProfile)$AlignedReadsInBam <- exptData(x)$AlignedReadsInBam
+            metadata(subsetProfile)$names <- metadata(x)$names
+            metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam
             return(new("ChIPprofile",subsetProfile,params=x[[1]]@params))                                                  
             
           }
@@ -365,11 +365,11 @@ normalise.ChIPprofile <-  function (object,method="rpm",normFactors=NULL)
   assaylist <- assays(object)
   if(method=="rpm" & object@params$format == "bam"){
     assayList <- lapply(1:length(assays(object)),
-                           function(x) assays(object)[[x]]*exptData(object)$Aligned[x]
+                           function(x) assays(object)[[x]]*metadata(object)$Aligned[x]
                         )
     subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(object))
-    exptData(subsetProfile)$names <- exptData(object)$names
-    exptData(subsetProfile)$AlignedReadsInBam <- exptData(object)$AlignedReadsInBam
+    metadata(subsetProfile)$names <- metadata(object)$names
+    metadata(subsetProfile)$AlignedReadsInBam <- metadata(object)$AlignedReadsInBam
     return(new("ChIPprofile",subsetProfile,params=object[[1]]@params))                                                  
     
     return(subsetProfile)
@@ -386,8 +386,8 @@ normalise.ChIPprofile <-  function (object,method="rpm",normFactors=NULL)
       assayList[[k]] <- t(t(assayList[[k]]) * normFactors)
     }
     subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(object))
-    exptData(subsetProfile)$names <- exptData(object)$names
-    exptData(subsetProfile)$AlignedReadsInBam <- exptData(object)$AlignedReadsInBam
+    metadata(subsetProfile)$names <- metadata(object)$names
+    metadata(subsetProfile)$AlignedReadsInBam <- metadata(object)$AlignedReadsInBam
     return(new("ChIPprofile",subsetProfile,params=object[[1]]@params))                                                  
   }
   if(method=="signalInRegion"){
@@ -396,8 +396,8 @@ normalise.ChIPprofile <-  function (object,method="rpm",normFactors=NULL)
       assayList[[k]] <- t(t(assayList[[k]])/rowSums(assayList[[k]],na.rm=TRUE))
     }
     subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(object))
-    exptData(subsetProfile)$names <- exptData(object)$names
-    exptData(subsetProfile)$AlignedReadsInBam <- exptData(object)$AlignedReadsInBam
+    metadata(subsetProfile)$names <- metadata(object)$names
+    metadata(subsetProfile)$AlignedReadsInBam <- metadata(object)$AlignedReadsInBam
     return(new("ChIPprofile",subsetProfile,params=object[[1]]@params))                                                  
   }  
   }

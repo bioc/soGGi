@@ -90,7 +90,7 @@ library(soGGi)
 chipExample <- regionPlot("pathToBAM/mybam.bam",myGRangesObject,format="bam")
 @
 
-A pre-computed data set is included in the package containing averages profiles created with command above for DNAse, Pol2, H3k9ac and H3k3me3. The object itself cantains all counts along interval region windows in assays slots and information of the samples in exptData slot accessible by \Rfunction{assays()} and \Rfunction{exptData} respectively.
+A pre-computed data set is included in the package containing averages profiles created with command above for DNAse, Pol2, H3k9ac and H3k3me3. The object itself cantains all counts along interval region windows in assays slots and information of the samples in metadata slot accessible by \Rfunction{assays()} and \Rfunction{metadata()} respectively.
 
 
 <<quick1_1, eval=TRUE , fig.width=10, fig.height=6>>=

@@ -101,7 +101,7 @@ plotRegion.ChIPprofile <- function(object,gts=NULL,sampleData=NULL,groupData=NUL
       } 
     
     ## Add Sample name, group name and index to dataframe
-      profileFrame <-data.frame("xIndex"=axisIndex,Group=profileMatTemp[,1],Sample=basename(unlist(exptData(object)["names"]))[p],Score=profileMatTemp[,2])
+      profileFrame <-data.frame("xIndex"=axisIndex,Group=profileMatTemp[,1],Sample=basename(unlist(metadata(object)["names"]))[p],Score=profileMatTemp[,2])
       
       profileList[[p]] <- profileFrame
     }  
@@ -149,7 +149,7 @@ plotRegion.ChIPprofile <- function(object,gts=NULL,sampleData=NULL,groupData=NUL
     } 
     
     ## Add Sample name, group name and index to dataframe
-    profileFrame <-data.frame("xIndex"=axisIndex,Group=profileMatTemp[,1],Sample=basename(unlist(exptData(object)["names"]))[p],Score=profileMatTemp[,2])
+    profileFrame <-data.frame("xIndex"=axisIndex,Group=profileMatTemp[,1],Sample=basename(unlist(metadata(object)["names"]))[p],Score=profileMatTemp[,2])
     
     profileList[[p]] <- profileFrame
   }  
@@ -174,7 +174,7 @@ plotRegion.ChIPprofile <- function(object,gts=NULL,sampleData=NULL,groupData=NUL
     ## Join multiple assays/samples
     
     profileFrame <- do.call(cbind,profileList)
-    colnames(profileFrame) <- basename(unlist(exptData(object)["names"]))
+    colnames(profileFrame) <- basename(unlist(metadata(object)["names"]))
 
     ## Attach index for different styles of plots
     

@@ -3,7 +3,7 @@
 #' @name soggi
 #' @rdname ChIPprofile
 #' @export
-#' @import BiocGenerics BiocParallel Biostrings GenomicAlignments GenomicRanges ggplot2 IRanges methods preprocessCore reshape2 Rsamtools rtracklayer chipseq S4Vectors
+#' @import methods reshape2 ggplot2 BiocGenerics S4Vectors IRanges GenomeInfoDb GenomicRanges Biostrings Rsamtools GenomicAlignments rtracklayer preprocessCore chipseq BiocParallel
 #' @include allClasses.r plots.R peakTransforms.r
 regionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,FragmentLength=150,style="point",distanceAround=1500,distanceUp=1500,distanceDown=1500,distanceInRegionStart=1500,distanceOutRegionStart=1500,distanceInRegionEnd=1500,distanceOutRegionEnd=1500,paired=FALSE,normalize="RPM",plotBy="coverage",removeDup=FALSE,verbose=TRUE,format="bam",seqlengths=NULL,forceFragment=NULL,method="bin",genome=NULL,cutoff=80,downSample=NULL,minFragmentLength=NULL,maxFragmentLength=NULL){
   if(!verbose){
@@ -167,7 +167,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
   # Split ranges into +/- strand. Regions with no strand information are assigned to + strand
     
   message("Splitting regions by Watson and Crick strand..",appendLF = FALSE)
-  elementMetadata(testRanges) <- cbind(elementMetadata(testRanges),data.frame(giID = paste0("giID",seq(1,length(testRanges)))))
+  mcols(testRanges) <- cbind(mcols(testRanges),data.frame(giID = paste0("giID",seq(1,length(testRanges)))))
   strand(testRanges[strand(testRanges) == "*"]) <- "+"
   testRangesPos <- testRanges[strand(testRanges) == "+"]
   testRangesNeg <- testRanges[strand(testRanges) == "-"]
@@ -257,11 +257,11 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
       tempPos <- GRanges(seqnames(gaPaired[strand(gaPaired) == "+"]),
                          IRanges(
                            start=start(gaPaired[strand(gaPaired) == "+"]),
-                           end=elementMetadata(gaPaired[strand(gaPaired) == "+"])$mpos
+                           end=mcols(gaPaired[strand(gaPaired) == "+"])$mpos
                            +qwidth(gaPaired[strand(gaPaired) == "+"])))
       tempNeg <- GRanges(seqnames(gaPaired[strand(gaPaired) == "-"]),
                          IRanges(
-                           start=elementMetadata(gaPaired[strand(gaPaired) == "-"])$mpos,                        
+                           start=mcols(gaPaired[strand(gaPaired) == "-"])$mpos,                        
                            end=end(gaPaired[strand(gaPaired) == "-"])
                          )) 
       temp <- c(tempPos,tempNeg)                
@@ -306,8 +306,8 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
   if(style=="point"){
     testRangesPos <- resize(testRangesPos,1,"center")
     testRangesNeg <- resize(testRangesNeg,1,"center")
-    RangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)-distanceUpStart,start(testRangesPos)+distanceDownEnd),strand=Rle("+",length(testRangesPos)),elementMetadata(testRangesPos))
-    RangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(end(testRangesNeg)-distanceDownEnd,end(testRangesNeg)+distanceUpStart),strand=Rle("-",length(testRangesNeg)),elementMetadata(testRangesNeg))  
+    RangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)-distanceUpStart,start(testRangesPos)+distanceDownEnd),strand=Rle("+",length(testRangesPos)),mcols(testRangesPos))
+    RangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(end(testRangesNeg)-distanceDownEnd,end(testRangesNeg)+distanceUpStart),strand=Rle("-",length(testRangesNeg)),mcols(testRangesNeg))  
     message("Calculating coverage across regions\nCalculating per contig. ")
     
     for(c in 1:length(chromosomes)){
@@ -334,12 +334,12 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
     
     if(is.null(samplename)){
       if(format %in% c("rlelist","pwm","granges")){
-        exptData(profileSample)  <- list(names=c("Sample"))
+        metadata(profileSample)  <- list(names=c("Sample"))
       }else{
-        exptData(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
+        metadata(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
       }
     } else{
-      exptData(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
+      metadata(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
     }
     
     ## Pass parameters
@@ -387,10 +387,10 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
         
         grWidths <- width(testRangesPos)
         Flanks <- round(grWidths*((distanceAround)/100))      
-        RangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)-Flanks,end(testRangesPos)+Flanks),strand=Rle("+",length(testRangesPos)),elementMetadata(testRangesPos))     
+        RangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)-Flanks,end(testRangesPos)+Flanks),strand=Rle("+",length(testRangesPos)),mcols(testRangesPos))     
         grWidths <- width(testRangesNeg)
         Flanks <- round(grWidths*((distanceAround)/100))
-        RangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(start(testRangesNeg)-Flanks,end(testRangesNeg)+Flanks),strand=Rle("+",length(testRangesNeg)),elementMetadata(testRangesNeg))     
+        RangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(start(testRangesNeg)-Flanks,end(testRangesNeg)+Flanks),strand=Rle("+",length(testRangesNeg)),mcols(testRangesNeg))     
         
         ## Initiate empty matrices for counts and GRanges for extracting coverage from rlelist
         matPos <- NULL
@@ -448,12 +448,12 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
       
       if(is.null(samplename)){
         if(format %in% c("rlelist","pwm","granges")){
-          exptData(profileSample)  <- list(names=c("Sample"))
+          metadata(profileSample)  <- list(names=c("Sample"))
         }else{
-          exptData(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
+          metadata(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
         }
       } else{
-        exptData(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
+        metadata(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
       }
       
       ## Pass parameters
@@ -680,12 +680,12 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
     
     if(is.null(samplename)){
       if(format %in% c("rlelist","pwm","granges")){
-        exptData(profileSample)  <- list(names=c("Sample"))
+        metadata(profileSample)  <- list(names=c("Sample"))
       }else{
-        exptData(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
+        metadata(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
       }
     }else{
-      exptData(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
+      metadata(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
     }
     
     ## Pass parameters
@@ -727,13 +727,13 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
     message("Defining flanks of regions..",appendLF=FALSE)
     
     ## Create GRanges for flanking regions
-    startRegionRangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)-distanceOutRegionStart,start(testRangesPos)+distanceInRegionStart),strand=Rle("+",length(testRangesPos)),elementMetadata(testRangesPos))
-    endRegionRangesPos <- GRanges(seqnames(testRangesPos),IRanges(end(testRangesPos)-distanceInRegionEnd,end(testRangesPos)+distanceOutRegionEnd),strand=Rle("+",length(testRangesPos)),elementMetadata(testRangesPos))
-    startRegionRangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(end(testRangesNeg)-distanceInRegionStart,end(testRangesNeg)+distanceOutRegionStart),strand=Rle("+",length(testRangesNeg)),elementMetadata(testRangesNeg))
-    endRegionRangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(start(testRangesNeg)-distanceOutRegionEnd,start(testRangesNeg)+distanceInRegionEnd),strand=Rle("+",length(testRangesNeg)),elementMetadata(testRangesNeg))
+    startRegionRangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)-distanceOutRegionStart,start(testRangesPos)+distanceInRegionStart),strand=Rle("+",length(testRangesPos)),mcols(testRangesPos))
+    endRegionRangesPos <- GRanges(seqnames(testRangesPos),IRanges(end(testRangesPos)-distanceInRegionEnd,end(testRangesPos)+distanceOutRegionEnd),strand=Rle("+",length(testRangesPos)),mcols(testRangesPos))
+    startRegionRangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(end(testRangesNeg)-distanceInRegionStart,end(testRangesNeg)+distanceOutRegionStart),strand=Rle("+",length(testRangesNeg)),mcols(testRangesNeg))
+    endRegionRangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(start(testRangesNeg)-distanceOutRegionEnd,start(testRangesNeg)+distanceInRegionEnd),strand=Rle("+",length(testRangesNeg)),mcols(testRangesNeg))
     
-    testRangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)+distanceInRegionStart,end(testRangesPos)-distanceInRegionEnd),strand=Rle("+",length(testRangesPos)),elementMetadata(testRangesPos))
-    testRangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(start(testRangesNeg)+distanceInRegionEnd,end(testRangesNeg)-distanceInRegionStart),strand=Rle("+",length(testRangesNeg)),elementMetadata(testRangesNeg))     
+    testRangesPos <- GRanges(seqnames(testRangesPos),IRanges(start(testRangesPos)+distanceInRegionStart,end(testRangesPos)-distanceInRegionEnd),strand=Rle("+",length(testRangesPos)),mcols(testRangesPos))
+    testRangesNeg <- GRanges(seqnames(testRangesNeg),IRanges(start(testRangesNeg)+distanceInRegionEnd,end(testRangesNeg)-distanceInRegionStart),strand=Rle("+",length(testRangesNeg)),mcols(testRangesNeg))     
     
     message("...Done")
     
@@ -920,12 +920,12 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
 
     if(is.null(samplename)){
       if(format %in% c("rlelist","pwm","granges")){
-        exptData(profileSample)  <- list(names=c("Sample"))
+        metadata(profileSample)  <- list(names=c("Sample"))
       }else{
-        exptData(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
+        metadata(profileSample)<- list(names=c(bamFile),AlignedReadsInBam=totalReads)  
       }
     }else{
-      exptData(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
+      metadata(profileSample)<- list(names=samplename,AlignedReadsInBam=totalReads)
     }
     
     ## Pass parameters
