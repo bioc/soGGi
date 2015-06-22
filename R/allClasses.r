@@ -127,9 +127,9 @@ setMethod("c", "ChIPprofile",
 setMethod("rbind", "ChIPprofile",
           function (x,...,deparse.level=1)
           {
-            assayList <- vector("list",length=length(x))
+            assayList <- vector("list",length=length(assays(x)))
             regions <- list(x,...)
-            for(a in 1:length(x)){
+            for(a in 1:length(assays(x))){
               listTemp <- vector("list",length=length(regions))
               for(r in 1:length(regions)){
                 listTemp[[r]] <- assays(regions[[r]])[[a]]
@@ -149,9 +149,9 @@ setMethod("rbind", "ChIPprofile",
 setMethod("cbind", "ChIPprofile",
           function (x,...,deparse.level=1)
           {
-            assayList <- vector("list",length=length(x))
+            assayList <- vector("list",length=length(assays(x)))
             regions <- list(x,...)
-            for(a in 1:length(x)){
+            for(a in 1:length(assays(x))){
               listTemp <- vector("list",length=length(regions))
               for(r in 1:length(regions)){
                 listTemp[[r]] <- assays(regions[[r]])[[a]]
@@ -263,7 +263,7 @@ setMethod("mean", "ChIPprofile",
               x <- list(x,...)
               assayList <- vector("list",length=length(assays(x[[1]])))
               nameList <- vector("list",length=length(assays(x[[1]])))
-              for(a in 1:length(x[[1]])){
+              for(a in 1:length(assays(x[[1]]))){
                 listTemp <- vector("list",length=length(x))
                 nameVec <- vector("character")
                 for(r in 1:length(x)){
