@@ -198,3 +198,118 @@ makeMotifScoreRle <- function(pwm,regions,genome,extend,removeRand=FALSE,strandS
   }  
   return(MotifScore)
 }
+
+
+plotCuts <- function(BAM,PWMlist,Genome,selection=c(0,300),chromosomes=NULL,distanceAround=500,cutoff=NULL,ntop=20000,verbose=TRUE,ext="",name=NULL){
+  # require(GenomicAlignments)
+  # require(ggplot2)
+  if(is.null(cutoff)) cutoff <- rep("80%",length(PWMlist))
+  
+  
+  if(file.exists(BAM) & is.na(index(BamFile(BAM)))){
+    message("Creating index for ",BAM)
+    indexBam(BAM)
+    message("..done")
+  }
+  
+  seqTableDF <- seqinfo(BamFile(BAM))
+  seqTableGR <- GRanges(seqTableDF)
+  #Genome <- Genome[seqnames(Genome) %in% seqnames(seqTableGR)]
+  if(!is.null(chromosomes)){
+    seqTableGR <- seqTableGR[seqnames(seqTableGR) %in% chromosomes]
+    #Genome <- Genome[seqnames(Genome) %in% chromosomes]
+    chromosomes <- chromosomes[chromosomes %in% seqnames(seqTableGR)]
+  }else{
+    chromosomes <- unique(seqnames(seqTableGR))
+  }
+  if(verbose) message("Reading BAM file..",appendLF=FALSE)
+  atacReads_Open <- readGAlignmentPairs(BAM,
+                                        param=ScanBamParam(which = seqTableGR,
+                                                           what=c("qname","mapq","isize")))
+  if(verbose) message("..done",appendLF=TRUE)
+  total <- length(atacReads_Open)
+  if(verbose) message("Read ",total," fragments",appendLF=TRUE)              
+  if(verbose) message("Filtering fragments by insert size..",appendLF=FALSE)
+  insertSizes <- abs(elementMetadata(GenomicAlignments::first(atacReads_Open))$isize)
+  atacReads_Open <- atacReads_Open[insertSizes > selection[1] & insertSizes < selection[2]]
+  totalLeft <- length(atacReads_Open)
+  if(verbose) message("..done",appendLF=TRUE)
+  if(verbose) message("Filter ",total-totalLeft," fragments outside insert size range of ",selection[1]," to ",selection[2],appendLF=TRUE)   
+  if(verbose) message("After filtering, ",totalLeft," fragments",appendLF=TRUE)       
+  if(verbose) message("Creating cuts..",appendLF=FALSE)
+  
+  read1 <- GenomicAlignments::first(atacReads_Open)
+  read2 <- GenomicAlignments::second(atacReads_Open)
+  
+  Firsts <- resize(granges(read1),fix="start",1)
+  First_Pos_toCut <- shift(granges(Firsts[strand(read1) == "+"]),
+                           4)
+  First_Neg_toCut <- shift(granges(Firsts[strand(read1) == "-"]),
+                           -5)
+  
+  Seconds <- resize(granges(read2),fix="start",1)
+  Second_Pos_toCut <- shift(granges(Seconds[strand(read2) == "+"]),
+                            4)
+  Second_Neg_toCut <- shift(granges(Seconds[strand(read2) == "-"]),
+                            -5)
+  
+  test_toCut <- c(First_Pos_toCut,First_Neg_toCut,
+                  Second_Pos_toCut,Second_Neg_toCut)
+  if(verbose) message("..done",appendLF=TRUE)
+  if(verbose) message("Creating coverage from cuts..",appendLF=FALSE)
+  cutsCoverage <- coverage(test_toCut)
+  if(verbose) message("..done",appendLF=TRUE)
+  if(verbose) message("Scannning for motifs",appendLF=TRUE)
+  emptyMGR <- GRanges()
+  for(i in 1:length(PWMlist)){
+    PWM <- PWMlist[[i]]
+    if(verbose) message("Checking positive strand..",appendLF=FALSE)
+    myAllMatch <- lapply(chromosomes,
+                         function(x)matchPWM(PWM,Genome[[x]],min.score = cutoff[i],with.score = TRUE))
+    names(myAllMatch) <- chromosomes
+    myAllMatchPos <- unlist(GRangesList(lapply(names(myAllMatch),
+                                               function(x)GRanges(x,ranges(myAllMatch[[x]]),score=mcols(myAllMatch[[x]])$score))
+    ))
+    if(verbose) message("..done",appendLF=TRUE)
+    if(verbose) message("Found ",length(myAllMatchPos)," ",names(PWMlist)[i]," motifs on positive strand",appendLF=TRUE)       
+    
+    if(verbose) message("Checking negative strand..",appendLF=FALSE)
+    
+    myAllMatch <- lapply(chromosomes,
+                         function(x)matchPWM(reverseComplement(PWM),Genome[[x]],min.score = cutoff[i],with.score = TRUE))
+    names(myAllMatch) <- chromosomes
+    myAllMatchNeg <- unlist(GRangesList(lapply(names(myAllMatch),
+                                               function(x)GRanges(x,ranges(myAllMatch[[x]]),score=mcols(myAllMatch[[x]])$score))
+    ))
+    if(verbose) message("..done",appendLF=TRUE)
+    if(verbose) message("Found ",length(myAllMatchNeg)," ",names(PWMlist)[i]," motifs on negative strand",appendLF=TRUE)       
+    
+    myAllMatch <- c(myAllMatchPos,myAllMatchNeg)
+    myAllMatch$Motif <- names(PWMlist)[i]
+    if(verbose) message("Found ",length(myAllMatch)," ",names(PWMlist)[i]," total motifs",appendLF=TRUE) 
+    myAllMatch <- myAllMatch[order(myAllMatch$score,decreasing = TRUE),]
+    message(max(ntop,length(myAllMatch)))
+    # myAllMatch <- myAllMatch[1:max(ntop,length(myAllMatch)),]
+    if(verbose) message("Using ",min(ntop,length(myAllMatch))," of total motifs",appendLF=TRUE) 
+    emptyMGR <- c(emptyMGR,myAllMatch)
+  }
+  suppressPackageStartupMessages(require(soGGi))
+  if(verbose) message("Creating cut profile around motifs..",appendLF=FALSE)       
+  
+  Motif_Cuts <- regionPlot(cutsCoverage,
+                           testRanges = emptyMGR,
+                           style = "point",
+                           format="rlelist",distanceAround = distanceAround,verbose=verbose)
+  if(verbose) message("..done",appendLF=TRUE)
+  myP <- plotRegion(Motif_Cuts,summariseBy="Motif",freeScale=TRUE)
+  if(is.null(name)){
+    outName <- paste0(dirname(BAM),
+                      paste0(gsub("\\.bam","",basename(BAM)),"_",ext,"_MotifCuts.png"))
+  }else{
+    outName <- name
+  }
+  ggsave(myP,
+         file=outName)
+  return(Motif_Cuts)
+}
+

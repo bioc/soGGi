@@ -111,7 +111,7 @@ setMethod("normaliseQuantiles", signature(object="ChIPprofile"), normaliseQuanti
 #' @return  A ChIPprofile object
 #' @export
 setMethod("c", "ChIPprofile",
-          function (x,...)
+          function (x,...,recursive=FALSE)
           {
             assayList <- lapply(list(x,...),function(x)assays(x)[[1]])
             subsetProfile <- SummarizedExperiment(assayList,rowRanges=rowRanges(x))

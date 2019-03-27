@@ -3,44 +3,55 @@
 #' @name soggi
 #' @rdname ChIPprofile
 #' @export
-#' @import methods reshape2 ggplot2 BiocGenerics S4Vectors IRanges GenomeInfoDb GenomicRanges Biostrings Rsamtools GenomicAlignments rtracklayer preprocessCore chipseq BiocParallel
+#' @import methods reshape2 ggplot2 BiocGenerics S4Vectors IRanges GenomeInfoDb GenomicRanges Biostrings Rsamtools GenomicAlignments rtracklayer preprocessCore chipseq BiocParallel DelayedMatrixStats
 #' @include allClasses.r plots.R peakTransforms.r
 regionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,FragmentLength=150,style="point",distanceAround=NULL,distanceUp=NULL,distanceDown=NULL,distanceInRegionStart=NULL,distanceOutRegionStart=NULL,distanceInRegionEnd=NULL,distanceOutRegionEnd=NULL,paired=FALSE,normalize="RPM",plotBy="coverage",removeDup=FALSE,verbose=TRUE,format="bam",seqlengths=NULL,forceFragment=NULL,method="bin",genome=NULL,cutoff=80,downSample=NULL,minFragmentLength=NULL,maxFragmentLength=NULL){
   if(!verbose){
     suppressMessages(runRegionPlot())
   }
-  result <- runRegionPlot(bamFile,testRanges,samplename,nOfWindows,FragmentLength,style,distanceAround,distanceUp,distanceDown,distanceInRegionStart,distanceOutRegionStart,distanceInRegionEnd,distanceOutRegionEnd,paired,normalize,plotBy,removeDup,format,seqlengths,forceFragment,method,genome,cutoff,downSample)
+  result <- runRegionPlot(bamFile,testRanges,samplename,nOfWindows,FragmentLength,style,distanceAround,distanceUp,distanceDown,distanceInRegionStart,distanceOutRegionStart,distanceInRegionEnd,distanceOutRegionEnd,paired,normalize,plotBy,removeDup,format,seqlengths,forceFragment,method,genome,cutoff,downSample,minFragmentLength,maxFragmentLength)
   return(result)  
 }
 
 runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,FragmentLength=150,style="point",distanceAround=NULL,distanceUp=NULL,distanceDown=NULL,distanceInRegionStart=NULL,distanceOutRegionStart=NULL,distanceInRegionEnd=NULL,distanceOutRegionEnd=NULL,paired=FALSE,normalize="RPM",plotBy="coverage",removeDup=FALSE,format="bam",seqlengths=NULL,forceFragment=NULL,method="bin",genome=NULL,cutoff=80,downSample=NULL,minFragmentLength=NULL,maxFragmentLength=NULL){
 
-  #bamFile <- "/home//pgellert/Dropbox (Lymphocyte_Developme)/WeiWeiLiang/RNAPII/Sample_R1-0hDupMarked.bam"
-  #bamFile <-"Downloads//mergedETOH.bwRange5.bw"
-  #bamFile <-"/Users/tcarroll//Downloads//Sample_R1-6hDupMarkedNormalised.bw"
-  #testRanges <- mm9PC
-  #nOfWindows=100
-  #FragmentLength=150
-  #style="region"
-  #distanceAround=1500
-  #distanceAround=20  
-  #distanceInRegionStart=1500
-  #distanceOutRegionStart=1500
-  #distanceInRegionEnd=1500
-  #distanceOutRegionEnd=1500
-  #paired=F
-  #normalize="RPM"
-  #plotBy="coverage"
-  #removeDup=F  
-  #format="bigwig"
-  #seqlengths=NULL
-  if(file.exists(bamFile) & length(index(BamFile(bamFile))) == 0){
-    message("Creating index for ",bamFile)
-    indexBam(bamFile)
-    message("..done")
+  # bamFile <- "~/Downloads/ENCFF049TYL.bam"
+  # #bamFile <-"Downloads//mergedETOH.bwRange5.bw"
+  # #bamFile <-"/Users/tcarroll//Downloads//Sample_R1-6hDupMarkedNormalised.bw"
+  # library(GenomicRanges)
+  # MelPeaks <- read.delim("~/Downloads/ENCFF591LSO.bed.gz",sep="\t",h=F)
+  # MelGR <- GRanges(MelPeaks[,1],IRanges(MelPeaks[,2],MelPeaks[,3]))
+  # library(Rsamtools)
+  # # indexBam("~/Downloads/ENCFF049TYL.bam")
+  # # indexBam("~/Downloads/ENCFF006JXP.bam")
+  # # melSi <- regionPlot("~/Downloads/ENCFF049TYL.bam"
+  # testRanges <- MelGR
+  # nOfWindows=100
+  # FragmentLength=150
+  # style="point"
+  # distanceAround=1500
+  # distanceAround=20
+  # distanceUp=NULL
+  # distanceDown=NULL
+  # distanceInRegionStart=1500
+  # distanceOutRegionStart=1500
+  # distanceInRegionEnd=1500
+  # distanceOutRegionEnd=1500
+  # paired=F
+  # normalize="RPM"
+  # plotBy="coverage"
+  # removeDup=F
+  # format="bam"
+  # seqlengths=NULL
+  if(format == "bam"){
+    if(file.exists(bamFile) & is.na(index(BamFile(bamFile)))){
+      message("Creating index for ",bamFile)
+      indexBam(bamFile)
+      message("..done")
+    }
   }
   
-  testRanges <- GetGRanges(testRanges)
+  # testRanges <- soGGi:::GetGRanges(testRanges)
   ## Check parameters
   if(style != "percentOfRegion"){
     if(is.null(distanceAround)){
@@ -125,15 +136,31 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
   
   # Import bigwig.
   
+  # if(format=="bigwig"){
+  #   message("Importing BigWig...",appendLF = FALSE)
+  #   genomeCov <- import.bw(bamFile,as = "RleList")
+  #   if(is.null(seqlengths)){
+  #     seqlengths(genomeCov) <- unlist(lapply(genomeCov,length))
+  #   }else{
+  #     seqlengths(genomeCov)[match(names(lengths),names(genomeCov))] <- lengths
+  #   }
+  #   lengths <- seqlengths(genomeCov)
+  #   allchrs <- names(lengths)
+  #   message("..Done")
+  # }
+
+  # bamFile <- "~/Downloads/ENCFF259VHD.bigWig"
+  
   if(format=="bigwig"){
-    message("Importing BigWig...",appendLF = FALSE)
-    genomeCov <- import.bw(bamFile,as = "RleList")
-    if(is.null(seqlengths)){
-      seqlengths(genomeCov) <- unlist(lapply(genomeCov,length))
-    }else{
-      seqlengths(genomeCov)[match(names(lengths),names(genomeCov))] <- lengths
-    }
-    lengths <- seqlengths(genomeCov)
+    message("Reading BigWig contig information...",appendLF = FALSE)
+    bwFF <- BigWigFile(bamFile)
+    # if(is.null(seqlengths)){
+    #   seqlengths(genomeCov) <- unlist(lapply(genomeCov,length))
+    # }else{
+    #   seqlengths(genomeCov)[match(names(lengths),names(genomeCov))] <- lengths
+    # }
+
+    lengths <- seqlengths(bwFF)
     allchrs <- names(lengths)
     message("..Done")
   }
@@ -275,7 +302,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
     if(paired==FALSE){
       total <- readGAlignments(bamFile,param=Param)
       message("..Done.\nRead in ",length(total)," reads")
-      
+      totalReads <- length(total)
       if(is.null(FragmentLength)){
         FragmentLength <- getShifts(total,lengths,shiftWindowStart=1,shiftWindowEnd=400)
       }
@@ -292,7 +319,9 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
       
       gaPaired <- readGAlignments(bamFile, 
                                          param=ScanBamParam(what=c("mpos"),
-                                                            flag=scanBamFlag(isProperPair = TRUE,isFirstMateRead = TRUE)))      
+                                                            flag=scanBamFlag(isProperPair = TRUE,isFirstMateRead = TRUE),
+                                                            mapqFilter=30))
+      totalReads <- length(total)
       tempPos <- GRanges(seqnames(gaPaired[strand(gaPaired) == "+"]),
                          IRanges(
                            start=start(gaPaired[strand(gaPaired) == "+"]),
@@ -303,20 +332,29 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
                            start=mcols(gaPaired[strand(gaPaired) == "-"])$mpos,                        
                            end=end(gaPaired[strand(gaPaired) == "-"])
                          )) 
-      temp <- c(tempPos,tempNeg)                
-      #temp <- GRanges(seqnames(tempPaired),IRanges(start(left(tempPaired)),end(right(tempPaired))))
+      temp <- c(tempPos,tempNeg)
       message("..Done.\nRead in ",length(temp)," reads")
-      if(!is.null(forceFragment)){
-        message("Forcing fragments to be centred and set to ",forceFragment,"..",appendLF=FALSE)
-        temp <- resize(temp,forceFragment,"center")
-        message("..done")        
+      if(removeDup){
+        message("Removing duplicates")
+        beforeDupR <- length(temp)
+        temp <- unique(temp)
+        AfterDupR <- length(temp)
+        message("Removed ",beforeDupR-AfterDupR," duplicates")
       }
+      #temp <- GRanges(seqnames(tempPaired),IRanges(start(left(tempPaired)),end(right(tempPaired))))
+
       if(!is.null(minFragmentLength)){
         temp <- temp[width(temp) > minFragmentLength]
       }
       if(!is.null(maxFragmentLength)){
         temp <- temp[width(temp) < maxFragmentLength]
       }   
+      if(!is.null(forceFragment)){
+        message("Forcing fragments to be centred and set to ",forceFragment,"..",appendLF=FALSE)
+        temp <- resize(temp,forceFragment,"center")
+        message("..done")        
+      }
+
       message("..done")
     }
   
@@ -337,8 +375,15 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
     allchrs <- names(lengths)
     message("..done")
   }
-  chromosomes <- seqlevels(genomeCov) 
   
+  if(format=="bigwig"){
+    bwSelect <- BigWigSelection(GRanges(seqnames=seqnames(reducedExtTestRanges[seqnames(reducedExtTestRanges) %in% allchrs]),IRanges(start=start(reducedExtTestRanges[seqnames(reducedExtTestRanges) %in% allchrs]),end=end(reducedExtTestRanges[seqnames(reducedExtTestRanges) %in% allchrs]))))
+    genomeCov <- import.bw(bamFile,selection=bwSelect,as="RleList")
+  }
+  
+  
+  chromosomes <- seqlevels(genomeCov) 
+  chromosomes <- chromosomes[chromosomes %in% unique(seqnames(reducedExtTestRanges))]
   
   # If style is "point" creates matrix of  per base pair coverage around centre of GRanges
   
@@ -360,10 +405,14 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
         rownames(NegRegionMat) <- RangesNeg[seqnames(RangesNeg) %in% chromosomes[c]]$giID
       }    
       RegionsMat <- rbind(RegionsMat,PosRegionMat,NegRegionMat)
+      PosRegionMat <- NULL
+      NegRegionMat <- NULL
     }
     message("Creating ChIPprofile.")
     
     ## Create matrix as summarisedexperiment with column and row names to be exported as part of ChIPprofile object
+
+    # profileMat <- realize(RegionsMat,"HDF5Array")
     profileMat <- RegionsMat
     colnames(profileMat) <- c(paste0("Point_Centre",seq(0-distanceUpStart,-1)),"Point_Centre",paste0("Point_Centre",seq(1,distanceDownEnd)))
     filteredRanges <- c(RangesPos,RangesNeg)

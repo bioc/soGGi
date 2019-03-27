@@ -115,7 +115,7 @@ summitPipeline <- function(reads,peakfile,fragmentLength,readlength){
 }
 
 runConsensusRegions <- function(testRanges,method="majority",overlap="any"){
-    if(is(testRanges, "GRangesList") & length(testRanges) > 1){
+    if(class(testRanges) == "GRangesList" & length(testRanges) > 1){
       
       reduced <- reduce(unlist(testRanges))
       consensusIDs <- paste0("consensus_",seq(1,length(reduced)))
@@ -126,6 +126,9 @@ runConsensusRegions <- function(testRanges,method="majority",overlap="any"){
       }
       if(method=="none"){
         reducedConsensus <- reduced
+      }
+      if(is.numeric(method)){
+        reducedConsensus <- reduced[rowSums(as.data.frame(mcols(reduced))) > method,]
       }
     consensusIDs <- paste0("consensus_",seq(1,length(reducedConsensus)))
     mcols(reducedConsensus) <- cbind(as.data.frame(mcols(reducedConsensus)),consensusIDs)
