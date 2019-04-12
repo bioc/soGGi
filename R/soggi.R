@@ -15,7 +15,7 @@ regionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Fragmen
 
 runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,FragmentLength=150,style="point",distanceAround=NULL,distanceUp=NULL,distanceDown=NULL,distanceInRegionStart=NULL,distanceOutRegionStart=NULL,distanceInRegionEnd=NULL,distanceOutRegionEnd=NULL,paired=FALSE,normalize="RPM",plotBy="coverage",removeDup=FALSE,format="bam",seqlengths=NULL,forceFragment=NULL,method="bin",genome=NULL,cutoff=80,downSample=NULL,minFragmentLength=NULL,maxFragmentLength=NULL){
 
-  # bamFile <- "~/Downloads/ENCFF049TYL.bam"
+  # bamFile <- "/Users/tcarroll/Projects/Results/chipseq/testRunATAC/BAMS//Sorted_Hindbrain_day_12_1_forMACS2.bam"
   # #bamFile <-"Downloads//mergedETOH.bwRange5.bw"
   # #bamFile <-"/Users/tcarroll//Downloads//Sample_R1-6hDupMarkedNormalised.bw"
   # library(GenomicRanges)
@@ -25,7 +25,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
   # # indexBam("~/Downloads/ENCFF049TYL.bam")
   # # indexBam("~/Downloads/ENCFF006JXP.bam")
   # # melSi <- regionPlot("~/Downloads/ENCFF049TYL.bam"
-  # testRanges <- MelGR
+  # testRanges <- selection
   # nOfWindows=100
   # FragmentLength=150
   # style="point"
@@ -321,7 +321,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
                                          param=ScanBamParam(what=c("mpos"),
                                                             flag=scanBamFlag(isProperPair = TRUE,isFirstMateRead = TRUE),
                                                             mapqFilter=30))
-      totalReads <- length(total)
+      totalReads <- length(gaPaired)
       tempPos <- GRanges(seqnames(gaPaired[strand(gaPaired) == "+"]),
                          IRanges(
                            start=start(gaPaired[strand(gaPaired) == "+"]),
@@ -416,6 +416,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
     profileMat <- RegionsMat
     colnames(profileMat) <- c(paste0("Point_Centre",seq(0-distanceUpStart,-1)),"Point_Centre",paste0("Point_Centre",seq(1,distanceDownEnd)))
     filteredRanges <- c(RangesPos,RangesNeg)
+    names(filteredRanges) <- c(as.character(RangesPos$giID), as.character(RangesNeg$giID))
     profileSample <- SummarizedExperiment(profileMat,rowRanges=filteredRanges[match(rownames(profileMat),filteredRanges$giID)])
 
     ## Set sample name for ChIPprofile object
