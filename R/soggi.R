@@ -15,34 +15,6 @@ regionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Fragmen
 
 runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,FragmentLength=150,style="point",distanceAround=NULL,distanceUp=NULL,distanceDown=NULL,distanceInRegionStart=NULL,distanceOutRegionStart=NULL,distanceInRegionEnd=NULL,distanceOutRegionEnd=NULL,paired=FALSE,normalize="RPM",plotBy="coverage",removeDup=FALSE,format="bam",seqlengths=NULL,forceFragment=NULL,method="bin",genome=NULL,cutoff=80,downSample=NULL,minFragmentLength=NULL,maxFragmentLength=NULL){
 
-  # bamFile <- "/Users/tcarroll/Projects/Results/chipseq/testRunATAC/BAMS//Sorted_Hindbrain_day_12_1_forMACS2.bam"
-  # #bamFile <-"Downloads//mergedETOH.bwRange5.bw"
-  # #bamFile <-"/Users/tcarroll//Downloads//Sample_R1-6hDupMarkedNormalised.bw"
-  # library(GenomicRanges)
-  # MelPeaks <- read.delim("~/Downloads/ENCFF591LSO.bed.gz",sep="\t",h=F)
-  # MelGR <- GRanges(MelPeaks[,1],IRanges(MelPeaks[,2],MelPeaks[,3]))
-  # library(Rsamtools)
-  # # indexBam("~/Downloads/ENCFF049TYL.bam")
-  # # indexBam("~/Downloads/ENCFF006JXP.bam")
-  # # melSi <- regionPlot("~/Downloads/ENCFF049TYL.bam"
-  # testRanges <- selection
-  # nOfWindows=100
-  # FragmentLength=150
-  # style="point"
-  # distanceAround=1500
-  # distanceAround=20
-  # distanceUp=NULL
-  # distanceDown=NULL
-  # distanceInRegionStart=1500
-  # distanceOutRegionStart=1500
-  # distanceInRegionEnd=1500
-  # distanceOutRegionEnd=1500
-  # paired=F
-  # normalize="RPM"
-  # plotBy="coverage"
-  # removeDup=F
-  # format="bam"
-  # seqlengths=NULL
   if(format == "bam"){
     if(file.exists(bamFile) & is.na(index(BamFile(bamFile)))){
       message("Creating index for ",bamFile)
@@ -401,7 +373,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
         rownames(PosRegionMat) <- RangesPos[seqnames(RangesPos) %in% chromosomes[c]]$giID
       }
       if(length(RangesNeg[seqnames(RangesNeg) %in% chromosomes[c]]) > 0){
-        NegRegionMat <- matrix(rev(as.vector(genomeCov[[which(names(genomeCov) %in% chromosomes[c])]][ranges(RangesNeg[seqnames(RangesNeg) %in% chromosomes[c]])])),ncol=mean(width(RangesNeg)),byrow=TRUE)
+        NegRegionMat <- matrix(rev(as.vector(genomeCov[[which(names(genomeCov) %in% chromosomes[c])]][ranges(RangesNeg[seqnames(RangesNeg) %in% chromosomes[c]])])),ncol=mean(width(RangesNeg)),byrow=TRUE)[length(RangesNeg[seqnames(RangesNeg) %in% chromosomes[c]]):1,]
         rownames(NegRegionMat) <- RangesNeg[seqnames(RangesNeg) %in% chromosomes[c]]$giID
       }    
       RegionsMat <- rbind(RegionsMat,PosRegionMat,NegRegionMat)
