@@ -290,10 +290,35 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
     if(paired==TRUE){
       
       gaPaired <- readGAlignments(bamFile, 
-                                         param=ScanBamParam(what=c("mpos"),
-                                                            flag=scanBamFlag(isProperPair = TRUE,isFirstMateRead = TRUE),
-                                                            mapqFilter=30))
+                                  param=ScanBamParam(what=c("mpos"),
+                                                     flag=scanBamFlag(isProperPair = TRUE,isFirstMateRead = TRUE),
+                                                     mapqFilter=30))
+      totalReads_pre <- length(gaPaired)
+      
+      # filter out any reads where the mate position is behind the first read start 
+      start_pos <- start(gaPaired)
+      end_pos <- mcols(gaPaired)$mpos + qwidth(gaPaired)
+      pos <- strand(gaPaired) == "+"
+      
+      toRemove_pos <- (end_pos-start_pos) < 0 & pos
+      gaPaired <- gaPaired[!toRemove_pos]
+      
+      start_neg <- mcols(gaPaired)$mpos
+      end_neg <- end(gaPaired)
+      neg <- strand(gaPaired) == "-"
+      
+      toRemove_neg <- (end_neg-start_neg) < 0 & neg
+      gaPaired <- gaPaired[!toRemove_neg]
+      
       totalReads <- length(gaPaired)
+      
+      total_removed_reads <- totalReads_pre - totalReads
+      
+      if(total_removed_reads > 0){
+        message("\nRemoved ",total_removed_reads," reads that had a negative width.")
+      }
+      
+      
       tempPos <- GRanges(seqnames(gaPaired[strand(gaPaired) == "+"]),
                          IRanges(
                            start=start(gaPaired[strand(gaPaired) == "+"]),
@@ -314,7 +339,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
         message("Removed ",beforeDupR-AfterDupR," duplicates")
       }
       #temp <- GRanges(seqnames(tempPaired),IRanges(start(left(tempPaired)),end(right(tempPaired))))
-
+      
       if(!is.null(minFragmentLength)){
         temp <- temp[width(temp) > minFragmentLength]
       }
@@ -326,7 +351,7 @@ runRegionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,Frag
         temp <- resize(temp,forceFragment,"center")
         message("..done")        
       }
-
+      
       message("..done")
     }
   
