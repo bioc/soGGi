@@ -3,7 +3,7 @@
 #' @name soggi
 #' @rdname ChIPprofile
 #' @export
-#' @import methods reshape2 ggplot2 BiocGenerics S4Vectors IRanges GenomeInfoDb GenomicRanges Biostrings Rsamtools GenomicAlignments rtracklayer preprocessCore chipseq BiocParallel DelayedMatrixStats
+#' @import methods reshape2 ggplot2 BiocGenerics S4Vectors IRanges Seqinfo GenomicRanges Biostrings Rsamtools GenomicAlignments rtracklayer preprocessCore chipseq BiocParallel DelayedMatrixStats
 #' @include allClasses.r plots.R peakTransforms.r
 regionPlot <- function(bamFile,testRanges,samplename=NULL,nOfWindows=100,FragmentLength=150,style="point",distanceAround=NULL,distanceUp=NULL,distanceDown=NULL,distanceInRegionStart=NULL,distanceOutRegionStart=NULL,distanceInRegionEnd=NULL,distanceOutRegionEnd=NULL,paired=FALSE,normalize="RPM",plotBy="coverage",removeDup=FALSE,verbose=TRUE,format="bam",seqlengths=NULL,forceFragment=NULL,method="bin",genome=NULL,cutoff=80,downSample=NULL,minFragmentLength=NULL,maxFragmentLength=NULL){
   if(!verbose){
